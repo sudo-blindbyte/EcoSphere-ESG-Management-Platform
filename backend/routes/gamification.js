@@ -6,6 +6,7 @@ const ChallengeParticipation = require('../models/ChallengeParticipation');
 const Badge = require('../models/Badge');
 const Reward = require('../models/Reward');
 const User = require('../models/User');
+const Category = require('../models/Category');
 
 // ==========================================
 // CHALLENGES ENDPOINTS
@@ -16,6 +17,16 @@ router.get('/challenges', protect, async (req, res) => {
   try {
     const challenges = await Challenge.find().populate('category', 'name type');
     res.json({ success: true, count: challenges.length, data: challenges });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get logged-in user's challenge participations
+router.get('/participations', protect, async (req, res) => {
+  try {
+    const participations = await ChallengeParticipation.find({ employeeId: req.user.id }).populate('challengeId');
+    res.json({ success: true, data: participations });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -167,6 +178,57 @@ router.get('/leaderboard', protect, async (req, res) => {
     res.json({ success: true, data: leaderboard });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Create new Challenge (admin/manager only)
+router.post('/challenges', protect, authorize('manager', 'admin'), async (req, res) => {
+  const { title, description, xp, difficulty } = req.body;
+  try {
+    const challenge = await Challenge.create({
+      title,
+      description,
+      xp: parseInt(xp),
+      difficulty,
+      status: 'Active',
+      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    });
+    res.status(201).json({ success: true, data: challenge });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Create new Badge (admin/manager only)
+router.post('/badges', protect, authorize('manager', 'admin'), async (req, res) => {
+  const { name, description, unlockRule, xpThreshold } = req.body;
+  try {
+    const badge = await Badge.create({
+      name,
+      description,
+      unlockRule: unlockRule || `${xpThreshold} XP`,
+      xpThreshold: parseInt(xpThreshold)
+    });
+    res.status(201).json({ success: true, data: badge });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Create new Reward (admin/manager only)
+router.post('/rewards', protect, authorize('manager', 'admin'), async (req, res) => {
+  const { name, description, pointsRequired, stock } = req.body;
+  try {
+    const reward = await Reward.create({
+      name,
+      description,
+      pointsRequired: parseInt(pointsRequired),
+      stock: parseInt(stock),
+      status: 'active'
+    });
+    res.status(201).json({ success: true, data: reward });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
   }
 });
 
