@@ -132,24 +132,37 @@ function SocialPage({ user }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: isAdminOrManager ? '1fr 1fr' : '1fr', gap: '2rem', marginBottom: '2.5rem' }}>
         
-        {/* CSR List view */}
         <div>
           <h3 style={{ marginBottom: '1rem', color: 'var(--color-soc)' }}>CSR Events &amp; Community Volunteering</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {activities.map(a => (
-              <div key={a._id} className="kpi-card" style={{ borderTop: '4px solid var(--color-soc)', padding: '1rem' }}>
-                <h4 style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.5rem' }}>{a.title}</h4>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>{a.description}</p>
-                <div style={{ fontSize: '0.85rem', marginBottom: '1rem' }}>
-                  <div>📅 <strong>Date:</strong> {new Date(a.activityDate).toLocaleDateString()}</div>
-                  <div>📍 <strong>Location:</strong> {a.location || 'Virtual'}</div>
-                  <div style={{ color: 'var(--color-game)', fontWeight: 'bold', marginTop: '0.25rem' }}>⚡ Reward: {a.pointsReward} XP</div>
-                </div>
-                <button onClick={() => handleRegister(a._id)} className="btn-primary" style={{ background: 'linear-gradient(135deg, var(--color-soc) 0%, #1d4ed8 100%)' }}>
-                  Register for Event
-                </button>
+            {activities.length === 0 ? (
+              <div style={{
+                color: 'var(--text-secondary)',
+                padding: '2.5rem',
+                border: '2px dashed var(--border-color)',
+                borderRadius: '8px',
+                textAlign: 'center',
+                backgroundColor: 'var(--bg-secondary)',
+                fontWeight: '500'
+              }}>
+                🤝 No upcoming volunteering activities scheduled.
               </div>
-            ))}
+            ) : (
+              activities.map(a => (
+                <div key={a._id} className="kpi-card" style={{ borderTop: '4px solid var(--color-soc)', padding: '1rem' }}>
+                  <h4 style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.5rem' }}>{a.title}</h4>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>{a.description}</p>
+                  <div style={{ fontSize: '0.85rem', marginBottom: '1rem' }}>
+                    <div>📅 <strong>Date:</strong> {new Date(a.activityDate).toLocaleDateString()}</div>
+                    <div>📍 <strong>Location:</strong> {a.location || 'Virtual'}</div>
+                    <div style={{ color: 'var(--color-game)', fontWeight: 'bold', marginTop: '0.25rem' }}>⚡ Reward: {a.pointsReward} XP</div>
+                  </div>
+                  <button onClick={() => handleRegister(a._id)} className="btn-primary" style={{ background: 'linear-gradient(135deg, var(--color-soc) 0%, #1d4ed8 100%)' }}>
+                    Register for Event
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -190,49 +203,60 @@ function SocialPage({ user }) {
       {/* Registrations audit view */}
       <div className="data-table-container">
         <h3 style={{ marginBottom: '1rem', color: 'var(--color-soc)' }}>CSR Participation Registry Logs</h3>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Employee</th>
-              <th>Activity Title</th>
-              <th>Status</th>
-              <th>Earned Points</th>
-              {isAdminOrManager && <th>Actions</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {participations.map(p => (
-              <tr key={p._id}>
-                <td style={{ fontWeight: 'bold' }}>{p.employeeId?.name}</td>
-                <td>{p.activityId?.title}</td>
-                <td>
-                  <span style={{ 
-                    fontSize: '0.8rem', 
-                    padding: '0.25rem 0.5rem', 
-                    borderRadius: '4px',
-                    backgroundColor: p.approvalStatus === 'Approved' ? 'rgba(16,185,129,0.2)' : p.approvalStatus === 'Pending' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)',
-                    color: p.approvalStatus === 'Approved' ? 'var(--color-env)' : p.approvalStatus === 'Pending' ? 'var(--color-game)' : '#ef4444'
-                  }}>
-                    {p.approvalStatus}
-                  </span>
-                </td>
-                <td style={{ color: 'var(--color-game)', fontWeight: 'bold' }}>{p.pointsEarned ? `⚡ ${p.pointsEarned} XP` : '0 XP'}</td>
-                {isAdminOrManager && (
-                  <td>
-                    {p.approvalStatus === 'Pending' ? (
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button onClick={() => handleApproval(p._id, 'Approved')} className="btn-primary" style={{ width: 'auto', padding: '0.35rem 0.75rem', background: 'var(--color-env)', fontSize: '0.8rem' }}>Approve</button>
-                        <button onClick={() => handleApproval(p._id, 'Rejected')} className="btn-primary" style={{ width: 'auto', padding: '0.35rem 0.75rem', background: '#ef4444', fontSize: '0.8rem' }}>Reject</button>
-                      </div>
-                    ) : (
-                      <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Closed</span>
-                    )}
-                  </td>
-                )}
+        {participations.length === 0 ? (
+          <div style={{
+            color: 'var(--text-secondary)',
+            padding: '2.5rem',
+            textAlign: 'center',
+            fontWeight: '500'
+          }}>
+            🤝 No CSR registry participation logs recorded. Employees can register for events above!
+          </div>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Activity Title</th>
+                <th>Status</th>
+                <th>Earned Points</th>
+                {isAdminOrManager && <th>Actions</th>}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {participations.map(p => (
+                <tr key={p._id}>
+                  <td style={{ fontWeight: 'bold' }}>{p.employeeId?.name}</td>
+                  <td>{p.activityId?.title}</td>
+                  <td>
+                    <span style={{ 
+                      fontSize: '0.8rem', 
+                      padding: '0.25rem 0.5rem', 
+                      borderRadius: '4px',
+                      backgroundColor: p.approvalStatus === 'Approved' ? 'rgba(16,185,129,0.2)' : p.approvalStatus === 'Pending' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)',
+                      color: p.approvalStatus === 'Approved' ? 'var(--color-env)' : p.approvalStatus === 'Pending' ? 'var(--color-game)' : '#ef4444'
+                    }}>
+                      {p.approvalStatus}
+                    </span>
+                  </td>
+                  <td style={{ color: 'var(--color-game)', fontWeight: 'bold' }}>{p.pointsEarned ? `⚡ ${p.pointsEarned} XP` : '0 XP'}</td>
+                  {isAdminOrManager && (
+                    <td>
+                      {p.approvalStatus === 'Pending' ? (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button onClick={() => handleApproval(p._id, 'Approved')} className="btn-primary" style={{ width: 'auto', padding: '0.35rem 0.75rem', background: 'var(--color-env)', fontSize: '0.8rem' }}>Approve</button>
+                          <button onClick={() => handleApproval(p._id, 'Rejected')} className="btn-primary" style={{ width: 'auto', padding: '0.35rem 0.75rem', background: '#ef4444', fontSize: '0.8rem' }}>Reject</button>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Closed</span>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

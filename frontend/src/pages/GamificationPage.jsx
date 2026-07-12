@@ -4,6 +4,7 @@ function GamificationPage({ user }) {
   const [challenges, setChallenges] = useState([]);
   const [badges, setBadges] = useState([]);
   const [rewards, setRewards] = useState([]);
+  const [participations, setParticipations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState('');
 
@@ -29,18 +30,21 @@ function GamificationPage({ user }) {
 
   const fetchData = async () => {
     try {
-      const [chRes, bgRes, rwRes] = await Promise.all([
+      const [chRes, bgRes, rwRes, ptRes] = await Promise.all([
         fetch('/api/gamification/challenges', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/gamification/badges', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/gamification/rewards', { headers: { Authorization: `Bearer ${token}` } })
+        fetch('/api/gamification/rewards', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/gamification/participations', { headers: { Authorization: `Bearer ${token}` } })
       ]);
       const chData = await chRes.json();
       const bgData = await bgRes.json();
       const rwData = await rwRes.json();
+      const ptData = await ptRes.json();
 
       if (chData.success) setChallenges(chData.data);
       if (bgData.success) setBadges(bgData.data);
       if (rwData.success) setRewards(rwData.data);
+      if (ptData.success) setParticipations(ptData.data);
     } catch (err) {
       console.error('Error fetching gamification data', err);
     } finally {
@@ -62,6 +66,7 @@ function GamificationPage({ user }) {
       const data = await res.json();
       if (data.success) {
         setMsg('Successfully joined the challenge! Complete milestones to claim your XP.');
+        fetchData();
       } else {
         setMsg(data.message || 'Failed to join challenge.');
       }
@@ -87,6 +92,40 @@ function GamificationPage({ user }) {
     } catch (err) {
       setMsg('API Error.');
     }
+  };
+
+  const handleUpdateProgress = async (participationId, progressVal, proofUrlVal) => {
+    setMsg('');
+    try {
+      const res = await fetch(`/api/gamification/participations/${participationId}/progress`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          progress: parseInt(progressVal),
+          proofUrl: proofUrlVal
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMsg('Challenge progress updated successfully!');
+        fetchData();
+      } else {
+        setMsg(data.message || 'Failed to update progress.');
+      }
+    } catch (err) {
+      setMsg('API Error.');
+    }
+  };
+
+  const onProgressSubmit = (e, partId) => {
+    e.preventDefault();
+    const form = e.target;
+    const progress = form.elements.progressInput.value;
+    const proofUrl = form.elements.proofInput.value;
+    handleUpdateProgress(partId, progress, proofUrl);
   };
 
   const handleCreateChallenge = async (e) => {
@@ -177,27 +216,145 @@ function GamificationPage({ user }) {
     <div>
       <h1 style={{ marginBottom: '1.5rem', fontWeight: 800 }}>🏆 Gamification Module</h1>
 
-      {msg && <div style={{ color: 'var(--color-game)', marginBottom: '1rem', fontWeight: 'bold' }}>{msg}</div>}
+      {msg && <div style={{ color: 'var(--color-game)', marginBottom: '1.5rem', fontWeight: 'bold' }}>{msg}</div>}
+
+      {/* Joined Challenges Tracking Section */}
+      <h3 style={{ marginBottom: '1rem', color: 'var(--color-game)' }}>🏃 My Joined Challenges</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
+        {participations.length === 0 ? (
+          <div style={{
+            color: 'var(--text-secondary)',
+            padding: '2.5rem',
+            border: '2px dashed var(--border-color)',
+            borderRadius: '8px',
+            textAlign: 'center',
+            backgroundColor: 'var(--bg-secondary)',
+            fontWeight: '500',
+            gridColumn: '1 / -1'
+          }}>
+            🏁 You have not joined any active challenges yet. Pick a challenge below to get started!
+          </div>
+        ) : (
+          participations.map(p => {
+            const ch = p.challengeId;
+            if (!ch) return null;
+            const isApproved = p.approvalStatus === 'Approved';
+            
+            return (
+              <div key={p._id} className="kpi-card" style={{ borderTop: `4px solid ${isApproved ? 'var(--color-env)' : 'var(--color-game)'}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                  <h4 style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{ch.title}</h4>
+                  <span style={{ 
+                    fontSize: '0.75rem', 
+                    padding: '0.2rem 0.5rem', 
+                    borderRadius: '4px',
+                    backgroundColor: isApproved ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)',
+                    color: isApproved ? 'var(--color-env)' : 'var(--color-game)'
+                  }}>
+                    {isApproved ? 'Approved & Awarded' : 'In Progress'}
+                  </span>
+                </div>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>{ch.description}</p>
+                
+                {/* Progress Bar */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
+                    <span>Progress Tracker</span>
+                    <strong>{p.progress}%</strong>
+                  </div>
+                  <div className="progress-bar-container">
+                    <div className="progress-bar-fill" style={{ 
+                      width: `${p.progress}%`,
+                      backgroundColor: isApproved ? 'var(--color-env)' : 'var(--color-game)'
+                    }}></div>
+                  </div>
+                </div>
+
+                {isApproved ? (
+                  <div style={{ 
+                    padding: '0.75rem', 
+                    backgroundColor: 'var(--bg-primary)', 
+                    borderRadius: '6px', 
+                    fontSize: '0.85rem', 
+                    color: 'var(--color-env)', 
+                    border: '1px solid var(--border-color)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.5rem' 
+                  }}>
+                    <span>✅</span>
+                    <span>Completed! <strong>+{ch.xp} XP</strong> points claimed.</span>
+                  </div>
+                ) : (
+                  <form onSubmit={(e) => onProgressSubmit(e, p._id)}>
+                    <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Update Progress (%)</label>
+                      <input 
+                        type="number" 
+                        name="progressInput"
+                        className="form-input" 
+                        defaultValue={p.progress}
+                        min="0"
+                        max="100"
+                        required
+                        style={{ padding: '0.4rem', fontSize: '0.85rem' }}
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
+                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Evidence / Verification Link</label>
+                      <input 
+                        type="url" 
+                        name="proofInput"
+                        className="form-input" 
+                        defaultValue={p.proofUrl || ''}
+                        placeholder="e.g. Strava link or shared folder URL"
+                        style={{ padding: '0.4rem', fontSize: '0.85rem' }}
+                      />
+                    </div>
+                    <button type="submit" className="btn-primary" style={{ padding: '0.5rem', fontSize: '0.85rem', background: 'var(--color-game)' }}>
+                      💾 Save Progress Update
+                    </button>
+                  </form>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
 
       {/* Challenges Section */}
       <h3 style={{ marginBottom: '1rem', color: 'var(--color-game)' }}>🎯 Active Sustainability Challenges</h3>
       <div style={{ display: 'grid', gridTemplateColumns: isAdminOrManager ? '1.2fr 0.8fr' : '1fr', gap: '2rem', marginBottom: '2.5rem' }}>
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
-            {challenges.map(c => (
-              <div key={c._id} className="kpi-card" style={{ borderTop: '4px solid var(--color-game)' }}>
-                <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>{c.title}</h4>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>{c.description}</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <span style={{ color: 'var(--color-game)', fontWeight: 'bold' }}>⚡ {c.xp} XP</span>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{c.difficulty}</span>
+          {challenges.length === 0 ? (
+            <div style={{
+              color: 'var(--text-secondary)',
+              padding: '2.5rem',
+              border: '2px dashed var(--border-color)',
+              borderRadius: '8px',
+              textAlign: 'center',
+              backgroundColor: 'var(--bg-secondary)',
+              fontWeight: '500'
+            }}>
+              🎯 No active sustainability challenges available. Create one to get started!
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
+              {challenges.map(c => (
+                <div key={c._id} className="kpi-card" style={{ borderTop: '4px solid var(--color-game)' }}>
+                  <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>{c.title}</h4>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>{c.description}</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <span style={{ color: 'var(--color-game)', fontWeight: 'bold' }}>⚡ {c.xp} XP</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{c.difficulty}</span>
+                  </div>
+                  <button onClick={() => handleJoinChallenge(c._id)} className="btn-primary" style={{ background: 'linear-gradient(135deg, var(--color-game) 0%, #d97706 100%)' }}>
+                    Join Challenge
+                  </button>
                 </div>
-                <button onClick={() => handleJoinChallenge(c._id)} className="btn-primary" style={{ background: 'linear-gradient(135deg, var(--color-game) 0%, #d97706 100%)' }}>
-                  Join Challenge
-                </button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Create Challenge Form */}
@@ -237,18 +394,32 @@ function GamificationPage({ user }) {
       <h3 style={{ marginBottom: '1rem', color: 'var(--color-env)' }}>🏅 Auto-Unlocked Achievement Badges</h3>
       <div style={{ display: 'grid', gridTemplateColumns: isAdminOrManager ? '1.2fr 0.8fr' : '1fr', gap: '2rem', marginBottom: '2.5rem' }}>
         <div>
-          <div className="badge-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
-            {badges.map(b => (
-              <div key={b._id} className="badge-card">
-                <div className="badge-icon">{b.icon === 'fa-leaf' ? '🌱' : b.icon === 'fa-globe' ? '🌍' : b.icon === 'fa-recycle' ? '♻️' : '🏆'}</div>
-                <h4 style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>{b.name}</h4>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{b.description}</p>
-                <span style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', backgroundColor: 'var(--bg-primary)', borderRadius: '4px', color: 'var(--color-game)' }}>
-                  Unlock: {b.unlockRule}
-                </span>
-              </div>
-            ))}
-          </div>
+          {badges.length === 0 ? (
+            <div style={{
+              color: 'var(--text-secondary)',
+              padding: '2.5rem',
+              border: '2px dashed var(--border-color)',
+              borderRadius: '8px',
+              textAlign: 'center',
+              backgroundColor: 'var(--bg-secondary)',
+              fontWeight: '500'
+            }}>
+              🏅 No achievement badges configured yet. Add a badge on the right!
+            </div>
+          ) : (
+            <div className="badge-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
+              {badges.map(b => (
+                <div key={b._id} className="badge-card">
+                  <div className="badge-icon">{b.icon === 'fa-leaf' ? '🌱' : b.icon === 'fa-globe' ? '🌍' : b.icon === 'fa-recycle' ? '♻️' : '🏆'}</div>
+                  <h4 style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>{b.name}</h4>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{b.description}</p>
+                  <span style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', backgroundColor: 'var(--bg-primary)', borderRadius: '4px', color: 'var(--color-game)' }}>
+                    Unlock: {b.unlockRule}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Create Badge Form */}
@@ -278,21 +449,35 @@ function GamificationPage({ user }) {
       <h3 style={{ marginBottom: '1rem', color: 'var(--color-soc)' }}>🛍️ Eco-Rewards Marketplace</h3>
       <div style={{ display: 'grid', gridTemplateColumns: isAdminOrManager ? '1.2fr 0.8fr' : '1fr', gap: '2rem', marginBottom: '2.5rem' }}>
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
-            {rewards.map(r => (
-              <div key={r._id} className="kpi-card" style={{ borderTop: '4px solid var(--color-soc)' }}>
-                <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>{r.name}</h4>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>{r.description}</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <span style={{ color: 'var(--color-game)', fontWeight: 'bold', fontSize: '1.2rem' }}>⚡ {r.pointsRequired} XP</span>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Stock: {r.stock} left</span>
+          {rewards.length === 0 ? (
+            <div style={{
+              color: 'var(--text-secondary)',
+              padding: '2.5rem',
+              border: '2px dashed var(--border-color)',
+              borderRadius: '8px',
+              textAlign: 'center',
+              backgroundColor: 'var(--bg-secondary)',
+              fontWeight: '500'
+            }}>
+              🛍️ No marketplace items available. Publish a reward on the right!
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
+              {rewards.map(r => (
+                <div key={r._id} className="kpi-card" style={{ borderTop: '4px solid var(--color-soc)' }}>
+                  <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>{r.name}</h4>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>{r.description}</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <span style={{ color: 'var(--color-game)', fontWeight: 'bold', fontSize: '1.2rem' }}>⚡ {r.pointsRequired} XP</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Stock: {r.stock} left</span>
+                  </div>
+                  <button onClick={() => handleRedeem(r._id)} className="btn-primary" style={{ background: 'linear-gradient(135deg, var(--color-soc) 0%, #1d4ed8 100%)' }}>
+                    Redeem Item
+                  </button>
                 </div>
-                <button onClick={() => handleRedeem(r._id)} className="btn-primary" style={{ background: 'linear-gradient(135deg, var(--color-soc) 0%, #1d4ed8 100%)' }}>
-                  Redeem Item
-                </button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Create Reward Form */}

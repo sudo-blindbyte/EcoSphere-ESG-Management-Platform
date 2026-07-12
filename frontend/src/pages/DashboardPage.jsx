@@ -83,26 +83,37 @@ function DashboardPage() {
         {/* Leaderboard Widget */}
         <div className="data-table-container">
           <h3 style={{ marginBottom: '1rem', color: 'var(--color-game)' }}>🏆 Top ESG Champions Leaderboard</h3>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Employee</th>
-                <th>Department</th>
-                <th>XP Points</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leaderboard.map((item, index) => (
-                <tr key={item._id}>
-                  <td>#{index + 1}</td>
-                  <td style={{ fontWeight: 'bold' }}>{item.name}</td>
-                  <td>{item.departmentId?.name || 'Unassigned'}</td>
-                  <td style={{ color: 'var(--color-game)', fontWeight: 'bold' }}>⚡ {item.xp} XP</td>
+          {leaderboard.length === 0 ? (
+            <div style={{
+              color: 'var(--text-secondary)',
+              padding: '2.5rem',
+              textAlign: 'center',
+              fontWeight: '500'
+            }}>
+              🏆 No employees registered on the leaderboard.
+            </div>
+          ) : (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Employee</th>
+                  <th>Department</th>
+                  <th>XP Points</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {leaderboard.map((item, index) => (
+                  <tr key={item._id}>
+                    <td>#{index + 1}</td>
+                    <td style={{ fontWeight: 'bold' }}>{item.name}</td>
+                    <td>{item.departmentId?.name || 'Unassigned'}</td>
+                    <td style={{ color: 'var(--color-game)', fontWeight: 'bold' }}>⚡ {item.xp} XP</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {/* Real-time Audit & Action logs */}

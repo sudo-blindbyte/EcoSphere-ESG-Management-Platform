@@ -192,48 +192,59 @@ function GovernancePage({ user }) {
         {/* Compliance Issues */}
         <div className="data-table-container">
           <h3 style={{ marginBottom: '1rem', color: 'var(--color-gov)' }}>⚠️ Compliance Incident logs</h3>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Details</th>
-                <th>Severity</th>
-                <th>Owner</th>
-                <th>Resolution Due</th>
-                <th>Status</th>
-                {isAdminOrManager && <th>Action</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {compliance.map(c => (
-                <tr key={c._id}>
-                  <td style={{ fontWeight: 'bold' }}>{c.description}</td>
-                  <td>
-                    <span style={{ 
-                      fontSize: '0.8rem', 
-                      padding: '0.25rem 0.5rem', 
-                      borderRadius: '4px',
-                      backgroundColor: c.severity === 'Critical' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
-                      color: c.severity === 'Critical' ? '#ef4444' : 'var(--color-game)'
-                    }}>
-                      {c.severity}
-                    </span>
-                  </td>
-                  <td>{c.owner?.name}</td>
-                  <td>{new Date(c.dueDate).toLocaleDateString()}</td>
-                  <td style={{ fontWeight: 'bold' }}>{c.status}</td>
-                  {isAdminOrManager && (
-                    <td>
-                      {c.status !== 'Resolved' ? (
-                        <button onClick={() => handleResolveIssue(c._id)} className="btn-primary" style={{ width: 'auto', padding: '0.35rem 0.75rem', background: 'var(--color-env)', fontSize: '0.8rem' }}>Resolve</button>
-                      ) : (
-                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Done</span>
-                      )}
-                    </td>
-                  )}
+          {compliance.length === 0 ? (
+            <div style={{
+              color: 'var(--text-secondary)',
+              padding: '2.5rem',
+              textAlign: 'center',
+              fontWeight: '500'
+            }}>
+              ⚖️ No compliance incidents reported. All systems are compliant!
+            </div>
+          ) : (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Details</th>
+                  <th>Severity</th>
+                  <th>Owner</th>
+                  <th>Resolution Due</th>
+                  <th>Status</th>
+                  {isAdminOrManager && <th>Action</th>}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {compliance.map(c => (
+                  <tr key={c._id}>
+                    <td style={{ fontWeight: 'bold' }}>{c.description}</td>
+                    <td>
+                      <span style={{ 
+                        fontSize: '0.8rem', 
+                        padding: '0.25rem 0.5rem', 
+                        borderRadius: '4px',
+                        backgroundColor: c.severity === 'Critical' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
+                        color: c.severity === 'Critical' ? '#ef4444' : 'var(--color-game)'
+                      }}>
+                        {c.severity}
+                      </span>
+                    </td>
+                    <td>{c.owner?.name}</td>
+                    <td>{new Date(c.dueDate).toLocaleDateString()}</td>
+                    <td style={{ fontWeight: 'bold' }}>{c.status}</td>
+                    {isAdminOrManager && (
+                      <td>
+                        {c.status !== 'Resolved' ? (
+                          <button onClick={() => handleResolveIssue(c._id)} className="btn-primary" style={{ width: 'auto', padding: '0.35rem 0.75rem', background: 'var(--color-env)', fontSize: '0.8rem' }}>Resolve</button>
+                        ) : (
+                          <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Done</span>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {/* Report Compliance form */}
@@ -278,18 +289,32 @@ function GovernancePage({ user }) {
         <div className="data-table-container">
           <h3 style={{ marginBottom: '1rem', color: 'var(--color-gov)' }}>📋 ESG Verification Audits</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-            {audits.map(a => (
-              <div key={a._id} style={{ padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ fontWeight: 'bold' }}>{a.title}</span>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{a.status}</span>
-                </div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  📅 Date: {new Date(a.auditDate).toLocaleDateString()}<br/>
-                  👤 Auditor: {a.leadAuditor?.name}
-                </div>
+            {audits.length === 0 ? (
+              <div style={{
+                color: 'var(--text-secondary)',
+                padding: '2.5rem',
+                border: '2px dashed var(--border-color)',
+                borderRadius: '8px',
+                textAlign: 'center',
+                backgroundColor: 'var(--bg-secondary)',
+                fontWeight: '500'
+              }}>
+                📋 No scheduled audits registered.
               </div>
-            ))}
+            ) : (
+              audits.map(a => (
+                <div key={a._id} style={{ padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span style={{ fontWeight: 'bold' }}>{a.title}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{a.status}</span>
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    📅 Date: {new Date(a.auditDate).toLocaleDateString()}<br/>
+                    👤 Auditor: {a.leadAuditor?.name}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -323,20 +348,35 @@ function GovernancePage({ user }) {
         {/* Policies */}
         <div className="data-table-container">
           <h3 style={{ marginBottom: '1rem', color: 'var(--color-gov)' }}>📜 Corporate ESG Policies</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem', marginTop: '1rem' }}>
-            {policies.map(p => (
-              <div key={p._id} className="kpi-card" style={{ borderTop: '4px solid var(--color-gov)', padding: '1rem' }}>
-                <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>{p.title}</h4>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>{p.description}</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Effective: {new Date(p.effectiveDate).toLocaleDateString()}</span>
-                  <button onClick={() => handleAcknowledge(p._id)} className="btn-primary" style={{ width: 'auto', padding: '0.5rem 1rem', background: 'var(--color-gov)' }}>
-                    Acknowledge
-                  </button>
+          {policies.length === 0 ? (
+            <div style={{
+              color: 'var(--text-secondary)',
+              padding: '2.5rem',
+              border: '2px dashed var(--border-color)',
+              borderRadius: '8px',
+              textAlign: 'center',
+              backgroundColor: 'var(--bg-secondary)',
+              fontWeight: '500',
+              marginTop: '1rem'
+            }}>
+              📜 No corporate policies published yet. Add a policy on the right!
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem', marginTop: '1rem' }}>
+              {policies.map(p => (
+                <div key={p._id} className="kpi-card" style={{ borderTop: '4px solid var(--color-gov)', padding: '1rem' }}>
+                  <h4 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>{p.title}</h4>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>{p.description}</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Effective: {new Date(p.effectiveDate).toLocaleDateString()}</span>
+                    <button onClick={() => handleAcknowledge(p._id)} className="btn-primary" style={{ width: 'auto', padding: '0.5rem 1rem', background: 'var(--color-gov)' }}>
+                      Acknowledge
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Publish Policy form */}

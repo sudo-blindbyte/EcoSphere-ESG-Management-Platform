@@ -225,7 +225,21 @@ function EnvironmentalPage({ user }) {
       <div className="data-table-container" style={{ marginBottom: '2.5rem' }}>
         <h3 style={{ marginBottom: '1rem', color: 'var(--color-env)' }}>📊 Decarbonization Targets Tracking</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-          {goals.map(g => {
+        {goals.length === 0 ? (
+          <div style={{
+            color: 'var(--text-secondary)',
+            padding: '2.5rem',
+            border: '2px dashed var(--border-color)',
+            borderRadius: '8px',
+            textAlign: 'center',
+            backgroundColor: 'var(--bg-secondary)',
+            fontWeight: '500',
+            gridColumn: 'span 2'
+          }}>
+            📊 No active targets launched yet. Use the launch form above to deploy one.
+          </div>
+        ) : (
+          goals.map(g => {
             const percentage = Math.min(100, Math.round((g.currentValue / g.targetValue) * 100));
             return (
               <div key={g._id} style={{ padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
@@ -251,7 +265,8 @@ function EnvironmentalPage({ user }) {
                 )}
               </div>
             );
-          })}
+          })
+        )}
         </div>
       </div>
 
