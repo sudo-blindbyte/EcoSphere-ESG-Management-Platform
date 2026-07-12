@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const { protect, authorize } = require('./auth');
 const CsrActivity = require('../models/CsrActivity');
 const EmployeeParticipation = require('../models/EmployeeParticipation');
@@ -96,10 +97,12 @@ router.put('/participations/:id/evidence', protect, async (req, res) => {
   }
 });
 
+const Department = require('../models/Department');
+
 // Manager approves/rejects participation and awards XP
 router.put('/participations/:id/approve', protect, authorize('manager', 'admin'), async (req, res) => {
   try {
-    const { approvalStatus } = req.body;
+    const { approvalStatus, proofUrl } = req.body;
     const participation = await EmployeeParticipation.findById(req.params.id).populate('activityId');
     if (!participation) {
       return res.status(404).json({ success: false, message: 'Participation record not found' });
@@ -107,6 +110,7 @@ router.put('/participations/:id/approve', protect, authorize('manager', 'admin')
 
     participation.approvalStatus = approvalStatus;
     if (approvalStatus === 'Approved') {
+      participation.proofUrl = proofUrl || participation.proofUrl || 'https://proof-placeholder.com/file';
       participation.pointsEarned = participation.activityId.pointsReward;
       participation.completionDate = new Date();
 
@@ -115,13 +119,15 @@ router.put('/participations/:id/approve', protect, authorize('manager', 'admin')
       if (user) {
         user.xp += participation.pointsEarned;
         await user.save();
-      }
 
-      // Update Department Social Score
-      const dept = await mongoose.model('Department').findById(user.departmentId);
-      if (dept) {
-        dept.socialScore = Math.min(100, dept.socialScore + 2); // 2 points per CSR activity approval
-        await dept.save();
+        // Update Department Social Score (only if user has a department linked)
+        if (user.departmentId) {
+          const dept = await Department.findById(user.departmentId);
+          if (dept) {
+            dept.socialScore = Math.min(100, dept.socialScore + 2); // 2 points per CSR activity approval
+            await dept.save();
+          }
+        }
       }
     } else {
       participation.pointsEarned = 0;

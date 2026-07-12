@@ -74,4 +74,24 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/reset-password
+// @desc    Direct password reset (simplified for hackathon demonstration)
+router.post('/reset-password', async (req, res) => {
+  const { email, newPassword } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User email not found' });
+    }
+
+    // Set new password (will trigger user schema pre-save encryption hook)
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ success: true, message: 'Password updated successfully!' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = { router, protect, authorize };

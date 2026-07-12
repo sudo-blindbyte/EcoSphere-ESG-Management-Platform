@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const { protect, authorize } = require('./auth');
 const EsgPolicy = require('../models/EsgPolicy');
 const PolicyAcknowledgement = require('../models/PolicyAcknowledgement');
 const Audit = require('../models/Audit');
 const ComplianceIssue = require('../models/ComplianceIssue');
+const User = require('../models/User');
+const Department = require('../models/Department');
 
 // ==========================================
 // ESG POLICIES ENDPOINTS
@@ -147,7 +150,7 @@ router.put('/compliance/:id/resolve', protect, authorize('manager', 'admin'), as
     // Recover governance score for department
     const user = await User.findById(issue.owner);
     if (user && user.departmentId) {
-      const dept = await mongoose.model('Department').findById(user.departmentId);
+      const dept = await Department.findById(user.departmentId);
       if (dept) {
         dept.governanceScore = Math.min(100, dept.governanceScore + 5); // Recover 5 points
         await dept.save();

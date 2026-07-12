@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const { protect, authorize } = require('./auth');
 const EmissionFactor = require('../models/EmissionFactor');
 const CarbonTransaction = require('../models/CarbonTransaction');
 const EsgGoal = require('../models/EsgGoal');
+const Department = require('../models/Department');
 
 // ==========================================
 // EMISSION FACTORS ENDPOINTS
@@ -69,8 +71,8 @@ router.put('/transactions/:id/state', protect, authorize('manager', 'admin'), as
     await transaction.save();
 
     // If verified, update the environmental score of the department
-    if (state === 'Verified') {
-      const dept = await mongoose.model('Department').findById(transaction.departmentId);
+    if (state === 'Verified' && transaction.departmentId) {
+      const dept = await Department.findById(transaction.departmentId);
       if (dept) {
         // Mock score recalculation: higher emissions decrease score
         const emissionsPenalty = (transaction.calculatedCO2e / 1000) * 0.1; 
