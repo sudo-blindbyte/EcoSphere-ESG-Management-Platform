@@ -98,6 +98,6 @@ Use the following pre-seeded test accounts to demonstrate different role-based v
 
 | Role | Email Address | Password | Privileges |
 | :--- | :--- | :--- | :--- |
-| **Administrator** | `admin@ecosphere.com` | `adminpassword` | Full access to settings, CSR approvals, compliance logs, policy publishing, and challenge creations. |
+| **Administrator** | `admin@ecosphere.com` | `admin0852` | Full access to settings, CSR approvals, compliance logs, policy publishing, and challenge creations. |
 | **Employee** | `employee@ecosphere.com` | `employeepassword` | Access to join challenges, update task progress, register for CSR events, acknowledge policies, and spend XP on marketplace items. |
-| **Employee 2** | `harsh@email.com` | `employeepassword` | Another pre-seeded employee account to test dashboard leaderboards and registrations. |
+| **Employee 2** | `harsh@email.com` | `harsh@1122` | Another pre-seeded employee account to test dashboard leaderboards and registrations. |
